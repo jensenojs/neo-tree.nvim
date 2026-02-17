@@ -36,6 +36,9 @@ local function do_show_or_focus(args, state, force_navigate)
       return
     end
     -- close_other_sources()
+    -- Prevent focus stealing: use nvim_open_win(enter=false) in acquire_window.
+    -- This avoids WinEnter/WinLeave side effects (e.g. closing yazi.nvim floats).
+    state._no_focus = true
     local current_win = vim.api.nvim_get_current_win()
     manager.navigate(state, args.dir, args.reveal_file, function()
       -- navigate changes the window to neo-tree, so just quickly hop back to the original window
@@ -43,6 +46,7 @@ local function do_show_or_focus(args, state, force_navigate)
     end, false)
   elseif args.action == "focus" then
     -- "focus" mean open and jump to the window if closed, and just focus it if already opened
+    state._no_focus = nil -- clear no-focus flag for focus mode
     if window_exists then
       vim.api.nvim_set_current_win(state.winid)
     end
@@ -248,5 +252,6 @@ M._command = function(...)
   local args = parser.parse({ ... }, true)
   M.execute(args)
 end
+
 
 return M
